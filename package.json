@@ -1,0 +1,21 @@
+{
+  "name": "2017-01-30",
+  "version": "1.0.0",
+  "description": "Some daily exercise in building apps with Elm",
+  "main": "webpack.config.js",
+  "scripts": {
+    "start": "electron main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "elm",
+    "webpack",
+    "electron"
+  ],
+  "author": "micah",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^1.4.15",
+    "webpack": "^1.14.0"
+  }
+}
