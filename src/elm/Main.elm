@@ -2,6 +2,7 @@ module Main exposing (..)
 
 import Html exposing (Html, text, div)
 import Html.Attributes exposing (class, classList)
+import Random
 
 
 main =
@@ -72,7 +73,14 @@ deck =
 
 createModel : ( Model, Cmd Msg )
 createModel =
-    ( Playing deck, Cmd.none )
+    let
+        model =
+            Playing deck
+
+        cmd =
+            randomList Shuffle (List.length deck)
+    in
+        ( model, cmd )
 
 
 
@@ -81,11 +89,29 @@ createModel =
 
 type Msg
     = NoOp
+    | Shuffle (List Int)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    ( model, Cmd.none )
+    case msg of
+        NoOp ->
+            ( model, Cmd.none )
+
+        Shuffle xs ->
+            let
+                newDeck =
+                    shuffleDeck deck xs
+            in
+                ( Playing newDeck, Cmd.none )
+
+
+shuffleDeck : Deck -> List comparable -> Deck
+shuffleDeck deck xs =
+    List.map2 (,) deck xs
+        |> List.sortBy Tuple.second
+        |> List.unzip
+        |> Tuple.first
 
 
 
@@ -96,7 +122,7 @@ view : Model -> Html Msg
 view model =
     case model of
         Playing deck ->
-            div [ class "wrapper" ] ( List.map createCard deck )
+            div [ class "wrapper" ] (List.map createCard deck)
 
 
 createCard : Card -> Html Msg
@@ -112,3 +138,14 @@ createCard card =
 cardClass : Card -> String
 cardClass { id } =
     "card-" ++ id
+
+
+
+-- Utility
+
+
+randomList : (List Int -> Msg) -> Int -> Cmd Msg
+randomList msg len =
+    Random.int 0 100
+        |> Random.list len
+        |> Random.generate msg
