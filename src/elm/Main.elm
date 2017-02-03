@@ -5,6 +5,12 @@ import Html.Events exposing (onClick)
 import Html.Attributes exposing (class, classList)
 import Random
 
+import Material
+import Material.Button as Button
+import Material.Options as Options
+import Material.Scheme as Scheme
+import Material.Color as Color
+
 
 main : Program Never Model Msg
 main =
@@ -20,7 +26,13 @@ main =
 -- Model
 
 
-type Model
+type alias Model =
+    { game : GameMode
+    , mdl : Material.Model
+    }
+
+
+type GameMode
     = Playing Deck
     | Guessing Deck Card
     | MatchCard Deck Card Card
@@ -79,7 +91,9 @@ createModel : ( Model, Cmd Msg )
 createModel =
     let
         model =
-            Playing deck
+            { game = Playing deck
+            , mdl = Material.model
+            }
 
         cmd =
             randomList Shuffle (List.length deck)
@@ -95,26 +109,42 @@ type Msg
     = NoOp
     | Shuffle (List Int)
     | Flip Card
+    | Mdl (Material.Msg Msg)
+    | Reset
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NoOp ->
-            ( model, Cmd.none )
+            let
+                _ =
+                    Debug.log "NoOp requested" (toString model)
+            in
+                ( model, Cmd.none )
 
         Shuffle xs ->
             let
                 newDeck =
                     shuffleDeck deck xs
             in
-                ( Playing newDeck, Cmd.none )
+                ( { model | game = Playing newDeck }, Cmd.none )
 
         Flip card ->
             if card.flipped then
                 model ! []
             else
                 checkIfCorrect card model
+
+        Reset ->
+            let
+                cmd =
+                    randomList Shuffle (List.length deck)
+            in
+                ( model, cmd )
+
+        Mdl msg_ ->
+            Material.update Mdl msg_ model
 
 
 flip : Bool -> Card -> Card -> Card
@@ -135,13 +165,13 @@ shuffleDeck deck xs =
 
 checkIfCorrect : Card -> Model -> ( Model, Cmd Msg )
 checkIfCorrect card model =
-    case model of
+    case model.game of
         Playing deck ->
             let
                 newDeck =
                     List.map (flip True card) deck
             in
-                Guessing newDeck card ! []
+                { model | game = Guessing newDeck card } ! []
 
         Guessing deck guess ->
             let
@@ -149,13 +179,13 @@ checkIfCorrect card model =
                     List.map (flip True card) deck
 
                 newModel =
-                    MatchCard newDeck guess card
+                    { model | game = MatchCard newDeck guess card }
             in
                 newModel ! []
 
         MatchCard deck guess1 guess2 ->
             if guess1.id == guess2.id then
-                update (Flip card) (Playing deck)
+                update (Flip card) { model | game = Playing deck }
             else
                 let
                     flipGuess =
@@ -164,7 +194,7 @@ checkIfCorrect card model =
                     newDeck =
                         List.map flipGuess deck
                 in
-                    Playing newDeck ! []
+                    { model | game = Playing newDeck } ! []
 
 
 
@@ -173,15 +203,27 @@ checkIfCorrect card model =
 
 view : Model -> Html Msg
 view model =
-    case model of
+    case model.game of
         Playing deck ->
-            game deck
+            Scheme.topWithScheme Color.Teal Color.LightGreen <|
+            div []
+                [ resetButton model
+                , game deck
+                ]
 
         Guessing deck _ ->
-            game deck
+            Scheme.topWithScheme Color.Teal Color.LightGreen <|
+            div []
+                [ resetButton model
+                , game deck
+                ]
 
         MatchCard deck _ _ ->
-            game deck
+            Scheme.topWithScheme Color.Teal Color.LightGreen <|
+            div []
+                [ resetButton model
+                , game deck
+                ]
 
 
 game : Deck -> Html Msg
@@ -208,6 +250,19 @@ createCard card =
 cardClass : Card -> String
 cardClass { id } =
     "card-" ++ id
+
+
+resetButton : Model -> Html Msg
+resetButton model =
+    Button.render Mdl
+        [ 0 ]
+        model.mdl
+        [ Button.raised
+        , Button.colored
+        , Button.ripple
+        , Options.onClick Reset
+        ]
+        [ text "Reset" ]
 
 
 
