@@ -10,8 +10,8 @@ app.on('ready', createWindow)
 
 function createWindow () {
   mainWindow = new BrowserWindow({
-    width: 1024,
-    height: 768
+    width: 850,
+    height: 850
   })
 
   mainWindow.loadURL(`file://${__dirname}/src/static/index.html`)
